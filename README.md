@@ -1,4 +1,4 @@
-# Mac Dial 2.0
+# Mac Dial
 
 **Surface Dial support for macOS, rebuilt natively for Apple Silicon.**
 
@@ -61,7 +61,7 @@ In every mode, **press & hold** opens the radial menu. Everything can be changed
 
 **Requires macOS 14 Sonoma or later.** Built for Apple Silicon Macs.
 
-1. Download `MacDial-2.0.zip` from the [Releases](../../releases) page and unzip it.
+1. Download `MacDial-2.1.zip` from the [Releases](../../releases) page and unzip it.
 2. Drag **Mac Dial.app** into your **Applications** folder.
 3. Open it. macOS will block it the first time because the app isn't signed with a paid Apple Developer account:
    - Go to **System Settings › Privacy & Security**, scroll down, and click **Open Anyway** next to Mac Dial.
