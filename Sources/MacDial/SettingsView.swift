@@ -105,8 +105,32 @@ struct GeneralSettings: View {
     var setLaunchAtLogin: (Bool) -> Void
 
     private let sensitivities: [(String, Int)] = [
-        ("Low", 18), ("Medium", 36), ("High", 72), ("Very high", 120), ("Extreme", 360),
+        ("Low", 18), ("Medium", 36), ("High", 72), ("Very high", 120),
     ]
+    private static let customTag = 0
+    private static let tickRange = DialConfig.ticksPerTurnRange
+    @State private var customTicks = false
+
+    private var isCustomSensitivity: Bool {
+        customTicks || !sensitivities.contains(where: { $0.1 == store.config.stepsPerRevolution })
+    }
+
+    /// Picker selection: a preset's tick count, or `customTag` for a custom amount.
+    private var sensitivitySelection: Binding<Int> {
+        Binding(
+            get: { isCustomSensitivity ? Self.customTag : store.config.stepsPerRevolution },
+            set: { value in
+                customTicks = value == Self.customTag
+                if value != Self.customTag { store.config.stepsPerRevolution = value }
+            })
+    }
+
+    /// Ticks per turn, kept within what the dial accepts.
+    private var ticksPerTurn: Binding<Int> {
+        Binding(
+            get: { store.config.stepsPerRevolution },
+            set: { store.config.stepsPerRevolution = min(max($0, Self.tickRange.lowerBound), Self.tickRange.upperBound) })
+    }
 
     var body: some View {
         Form {
@@ -159,10 +183,26 @@ struct GeneralSettings: View {
             }
 
             Section("Dial") {
-                Picker("Sensitivity", selection: $store.config.stepsPerRevolution) {
+                Picker("Sensitivity", selection: sensitivitySelection) {
                     ForEach(sensitivities, id: \.1) { item in
                         Text("\(item.0) (\(item.1) ticks / turn)").tag(item.1)
                     }
+                    Divider()
+                    Text("Custom").tag(Self.customTag)
+                }
+                if isCustomSensitivity {
+                    LabeledContent("Ticks per turn") {
+                        HStack(spacing: 6) {
+                            TextField("Ticks per turn", value: ticksPerTurn, format: .number)
+                                .labelsHidden()
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 64)
+                            Stepper("Ticks per turn", value: ticksPerTurn, in: Self.tickRange)
+                                .labelsHidden()
+                        }
+                    }
+                    Text("Any amount from \(Self.tickRange.lowerBound) to \(Self.tickRange.upperBound). The haptic ticks follow it too.")
+                        .font(.callout).foregroundStyle(.secondary)
                 }
                 Toggle("Haptic tick while turning", isOn: $store.config.detentHaptics)
                 Toggle("Haptic feedback for menus and mode changes", isOn: $store.config.menuHaptics)

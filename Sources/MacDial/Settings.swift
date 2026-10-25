@@ -216,6 +216,9 @@ struct DialMode: Codable, Equatable, Identifiable {
 // MARK: - Config
 
 struct DialConfig: Codable, Equatable {
+    /// Above ~120 the dial's haptic motor can't tick any finer.
+    static let ticksPerTurnRange = 4...120
+
     var modes: [DialMode] = DialMode.defaults
     var currentModeID: UUID?
     var stepsPerRevolution: Int = 36
@@ -241,7 +244,8 @@ struct DialConfig: Codable, Equatable {
         let d = DialConfig()
         modes = (try? c.decode([DialMode].self, forKey: .modes)) ?? d.modes
         currentModeID = try? c.decode(UUID.self, forKey: .currentModeID)
-        stepsPerRevolution = (try? c.decode(Int.self, forKey: .stepsPerRevolution)) ?? d.stepsPerRevolution
+        stepsPerRevolution = min(max((try? c.decode(Int.self, forKey: .stepsPerRevolution)) ?? d.stepsPerRevolution,
+                                     Self.ticksPerTurnRange.lowerBound), Self.ticksPerTurnRange.upperBound)
         detentHaptics = (try? c.decode(Bool.self, forKey: .detentHaptics)) ?? d.detentHaptics
         menuHaptics = (try? c.decode(Bool.self, forKey: .menuHaptics)) ?? d.menuHaptics
         showHUD = (try? c.decode(Bool.self, forKey: .showHUD)) ?? d.showHUD
