@@ -1,4 +1,4 @@
-# Mac Dial
+# Mac Dial 2.0
 
 **Surface Dial support for macOS, rebuilt natively for Apple Silicon.**
 
