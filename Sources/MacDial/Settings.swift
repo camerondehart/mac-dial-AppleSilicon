@@ -229,6 +229,8 @@ struct DialConfig: Codable, Equatable {
     var menuBarGlyph: MenuBarGlyph = .twoTone
     var doubleClickInterval: Double = 0.3
     var longPressDuration: Double = 0.5
+    /// Reconnect to the dial as soon as it wakes from sleep (see BluetoothWaker).
+    var fastWake = true
 
     var currentMode: DialMode {
         modes.first(where: { $0.id == currentModeID }) ?? modes.first ?? DialMode.defaults[0]
@@ -253,6 +255,7 @@ struct DialConfig: Codable, Equatable {
         menuBarGlyph = (try? c.decode(MenuBarGlyph.self, forKey: .menuBarGlyph)) ?? d.menuBarGlyph
         doubleClickInterval = (try? c.decode(Double.self, forKey: .doubleClickInterval)) ?? d.doubleClickInterval
         longPressDuration = (try? c.decode(Double.self, forKey: .longPressDuration)) ?? d.longPressDuration
+        fastWake = (try? c.decode(Bool.self, forKey: .fastWake)) ?? d.fastWake
     }
 }
 

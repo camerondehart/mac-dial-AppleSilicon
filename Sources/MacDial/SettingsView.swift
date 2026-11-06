@@ -206,6 +206,9 @@ struct GeneralSettings: View {
                 }
                 Toggle("Haptic tick while turning", isOn: $store.config.detentHaptics)
                 Toggle("Haptic feedback for menus and mode changes", isOn: $store.config.menuHaptics)
+                Toggle("Wake instantly from sleep", isOn: $store.config.fastWake)
+                Text("Has your Mac listen for the dial so it reconnects as soon as you touch it. Uses Bluetooth permission; doesn't affect the dial's battery.")
+                    .font(.callout).foregroundStyle(.secondary)
             }
 
             Section("Gestures") {

@@ -10,6 +10,7 @@ final class DialController {
     let actions = ActionEngine()
     let radial = RadialMenuController()
     let hud = HUDController()
+    let waker = BluetoothWaker()
 
     private var cancellables = Set<AnyCancellable>()
     private var lastModeID: UUID?
@@ -50,6 +51,7 @@ final class DialController {
         if device.detentHaptics != config.detentHaptics {
             device.detentHaptics = config.detentHaptics
         }
+        waker.isEnabled = config.fastWake
 
         let mode = config.currentMode
         if mode.id != lastModeID {

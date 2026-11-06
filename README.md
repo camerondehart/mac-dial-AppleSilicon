@@ -61,7 +61,7 @@ In every mode, **press & hold** opens the radial menu. Everything can be changed
 
 **Requires macOS 14 Sonoma or later.** Built for Apple Silicon Macs.
 
-1. Download `MacDial-2.1.zip` from the [Releases](../../releases) page and unzip it.
+1. Download `MacDial-2.2.zip` from the [Releases](../../releases) page and unzip it.
 2. Drag **Mac Dial.app** into your **Applications** folder.
 3. Open it. macOS will block it the first time because the app isn't signed with a paid Apple Developer account:
    - Go to **System Settings › Privacy & Security**, scroll down, and click **Open Anyway** next to Mac Dial.
@@ -76,6 +76,7 @@ In every mode, **press & hold** opens the radial menu. Everything can be changed
 ### Tips
 
 - **Open at login:** Settings › General › *Open Mac Dial at login*.
+- **Instant wake:** when the dial goes to sleep, Mac Dial has your Mac listen for it so it reconnects as soon as you press or turn it. Allow **Bluetooth** access when asked. You can turn this off in Settings › General › *Wake instantly from sleep*.
 - **Switch desktops** needs the ⌃← / ⌃→ shortcuts turned on in **System Settings › Keyboard › Keyboard Shortcuts › Mission Control**.
 - **Brightness** only affects Apple displays.
 - **Switch modes** from the radial menu (press & hold), or from the menu bar icon.

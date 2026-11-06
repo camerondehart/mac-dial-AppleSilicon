@@ -10,6 +10,7 @@ let package = Package(
             path: "Sources/MacDial",
             linkerSettings: [
                 .linkedFramework("IOKit"),
+                .linkedFramework("CoreBluetooth"),
                 .linkedFramework("AppKit"),
                 .linkedFramework("SwiftUI"),
                 .linkedFramework("ServiceManagement"),
