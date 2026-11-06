@@ -76,6 +76,7 @@ In every mode, **press & hold** opens the radial menu. Everything can be changed
 ### Tips
 
 - **Open at login:** Settings › General › *Open Mac Dial at login*.
+- **Instant wake:** when the dial goes to sleep, Mac Dial has your Mac listen for it so it reconnects as soon as you press or turn it. Allow **Bluetooth** access when asked. You can turn this off in Settings › General › *Wake instantly from sleep*.
 - **Switch desktops** needs the ⌃← / ⌃→ shortcuts turned on in **System Settings › Keyboard › Keyboard Shortcuts › Mission Control**.
 - **Brightness** only affects Apple displays.
 - **Switch modes** from the radial menu (press & hold), or from the menu bar icon.

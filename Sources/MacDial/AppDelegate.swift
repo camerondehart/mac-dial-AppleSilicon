@@ -18,7 +18,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         statusBar.onOpenSettings = { [weak self] in self?.showSettings() }
         statusBar.onShowRadialMenu = { [weak self] in self?.controller.showRadialMenu() }
 
-        device.onConnectionChanged = { [weak self] _ in
+        device.onConnectionChanged = { [weak self] connected in
+            if connected { self?.controller.waker.dialDidAttach() }
             self?.refreshStatus()
             self?.statusBar.updateIcon()
         }
@@ -54,6 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         controller.actions.finishAppSwitch()
+        controller.waker.isEnabled = false
         device.stop()
     }
 
