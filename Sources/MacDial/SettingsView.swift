@@ -209,6 +209,15 @@ struct GeneralSettings: View {
                 Toggle("Wake instantly from sleep", isOn: $store.config.fastWake)
                 Text("Has your Mac listen for the dial so it reconnects as soon as you touch it. Uses Bluetooth permission; doesn't affect the dial's battery.")
                     .font(.callout).foregroundStyle(.secondary)
+                Picker("Stay connected after use", selection: $store.config.stayConnectedMinutes) {
+                    Text("Off").tag(0)
+                    Text("10 minutes").tag(10)
+                    Text("30 minutes").tag(30)
+                    Text("1 hour").tag(60)
+                    Text("2 hours").tag(120)
+                }
+                Text("Keeps the dial from going to sleep for this long after you last touch it. Longer uses a little more of the dial's battery; it always sleeps once the time is up.")
+                    .font(.callout).foregroundStyle(.secondary)
             }
 
             Section("Gestures") {

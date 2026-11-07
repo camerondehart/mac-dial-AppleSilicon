@@ -52,6 +52,10 @@ final class DialController {
             device.detentHaptics = config.detentHaptics
         }
         waker.isEnabled = config.fastWake
+        let stayConnected = TimeInterval(config.stayConnectedMinutes * 60)
+        if device.stayConnectedAfterUse != stayConnected {
+            device.stayConnectedAfterUse = stayConnected
+        }
 
         let mode = config.currentMode
         if mode.id != lastModeID {

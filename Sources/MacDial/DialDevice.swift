@@ -27,10 +27,23 @@ final class DialDevice {
     var stepsPerRevolution = 36 { didSet { pushHapticConfig() } }
     var detentHaptics = false { didSet { pushHapticConfig() } }
 
+    /// How long to keep the Bluetooth link from idling out after the dial was
+    /// last touched. 0 lets the dial sleep on its own (short) schedule.
+    ///
+    /// The dial drops its link and sleeps after a few idle minutes. While this
+    /// window is open we quietly re-send its (unchanged) haptic settings once a
+    /// minute, which counts as link activity and keeps it awake. Once the
+    /// window passes with no input we stop, so the dial still sleeps when you
+    /// walk away and its battery isn't spent overnight.
+    var stayConnectedAfterUse: TimeInterval = 30 * 60 { didSet { scheduleKeepAlive() } }
+
     private let manager: IOHIDManager
     private var devices: [IOHIDDevice] = []
     private var reportBuffers: [UnsafeMutablePointer<UInt8>] = []
     private var lastButton = ButtonState.released
+    private var lastActivity = Date()
+    private var keepAliveTimer: Timer?
+    private static let keepAliveInterval: TimeInterval = 60
     private static let reportBufferSize = 256
     // iokit_common_err(0x2e2): a function-like macro, so not imported into Swift.
     private static let ioReturnNotPermitted = IOReturn(bitPattern: 0xE00002E2)
@@ -65,6 +78,8 @@ final class DialDevice {
     }
 
     func stop() {
+        keepAliveTimer?.invalidate()
+        keepAliveTimer = nil
         // Leave the dial in a sane state for other OSes / apps.
         stepsPerRevolution = 36
         detentHaptics = false
@@ -118,6 +133,7 @@ final class DialDevice {
         }
         setConnected(true)
         pushHapticConfig()
+        noteActivity()
     }
 
     private func detach(_ device: IOHIDDevice) {
@@ -129,12 +145,17 @@ final class DialDevice {
             onButton?(.released)
         }
         setConnected(!devices.isEmpty)
+        if devices.isEmpty {
+            keepAliveTimer?.invalidate()
+            keepAliveTimer = nil
+        }
     }
 
     private func setConnected(_ connected: Bool) {
         guard connected != isConnected else { return }
         isConnected = connected
         if !connected { serialNumber = "" }
+        NSLog("MacDial: dial %@", connected ? "connected" : "disconnected")
         onConnectionChanged?(connected)
     }
 
@@ -147,6 +168,7 @@ final class DialDevice {
         let button: ButtonState = bytes[1] & 1 == 1 ? .pressed : .released
         let rotation = Int(Int8(bitPattern: bytes[2]))
 
+        noteActivity()
         if button != lastButton {
             lastButton = button
             onButton?(button)
@@ -154,6 +176,34 @@ final class DialDevice {
         if rotation != 0 {
             onRotate?(rotation)
         }
+    }
+
+    // MARK: - Keep-alive
+
+    private func noteActivity() {
+        lastActivity = Date()
+        if keepAliveTimer == nil { scheduleKeepAlive() }
+    }
+
+    private func scheduleKeepAlive() {
+        keepAliveTimer?.invalidate()
+        keepAliveTimer = nil
+        guard !devices.isEmpty, stayConnectedAfterUse > 0 else { return }
+
+        let timer = Timer(timeInterval: DialDevice.keepAliveInterval, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            if Date().timeIntervalSince(self.lastActivity) >= self.stayConnectedAfterUse {
+                // Idle long enough: let the dial go to sleep.
+                self.keepAliveTimer?.invalidate()
+                self.keepAliveTimer = nil
+                return
+            }
+            self.pushHapticConfig()
+        }
+        // Lets macOS batch the wake-up with other work.
+        timer.tolerance = 10
+        RunLoop.main.add(timer, forMode: .common)
+        keepAliveTimer = timer
     }
 
     // MARK: - Haptics
