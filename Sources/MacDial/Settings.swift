@@ -231,8 +231,6 @@ struct DialConfig: Codable, Equatable {
     var longPressDuration: Double = 0.5
     /// Reconnect to the dial as soon as it wakes from sleep (see BluetoothWaker).
     var fastWake = true
-    /// Minutes to keep the dial awake after it was last used (0 = off).
-    var stayConnectedMinutes = 30
 
     var currentMode: DialMode {
         modes.first(where: { $0.id == currentModeID }) ?? modes.first ?? DialMode.defaults[0]
@@ -258,7 +256,6 @@ struct DialConfig: Codable, Equatable {
         doubleClickInterval = (try? c.decode(Double.self, forKey: .doubleClickInterval)) ?? d.doubleClickInterval
         longPressDuration = (try? c.decode(Double.self, forKey: .longPressDuration)) ?? d.longPressDuration
         fastWake = (try? c.decode(Bool.self, forKey: .fastWake)) ?? d.fastWake
-        stayConnectedMinutes = max(0, (try? c.decode(Int.self, forKey: .stayConnectedMinutes)) ?? d.stayConnectedMinutes)
     }
 }
 

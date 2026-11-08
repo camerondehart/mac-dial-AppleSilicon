@@ -32,28 +32,10 @@ final class DialDevice {
     var stepsPerRevolution = 36 { didSet { pushHapticConfig() } }
     var detentHaptics = false { didSet { pushHapticConfig() } }
 
-    /// How long to keep the Bluetooth link from idling out after the dial was
-    /// last touched. 0 lets the dial sleep on its own (short) schedule.
-    ///
-    /// The dial's firmware sleeps about 3 minutes after the last press or turn,
-    /// and plain Bluetooth traffic from the Mac doesn't reset that timer (tested:
-    /// re-sending the haptic settings every minute made no difference). So
-    /// while this window is open we fire the shortest haptic pulse the dial
-    /// allows once a minute, which may count as activity. Once the window
-    /// passes with no input we stop, so the dial still sleeps when you walk
-    /// away and its battery isn't spent overnight. Experimental.
-    var stayConnectedAfterUse: TimeInterval = 30 * 60 { didSet { scheduleKeepAlive() } }
-
     private let manager: IOHIDManager
     private var devices: [IOHIDDevice] = []
     private var reportBuffers: [UnsafeMutablePointer<UInt8>] = []
     private var lastButton = ButtonState.released
-    private var lastActivity = Date()
-    private var keepAliveTimer: Timer?
-    private static let keepAliveInterval: TimeInterval = 60
-    /// Waveform cutoff used for the keep-alive pulse: as short as the dial
-    /// will play, so it should be too faint to feel.
-    private static let keepAliveCutoff: UInt8 = 1
     /// Set on attach; cleared once the first input report after it is logged.
     private var awaitingFirstInput = false
     private static let reportBufferSize = 256
@@ -90,8 +72,6 @@ final class DialDevice {
     }
 
     func stop() {
-        keepAliveTimer?.invalidate()
-        keepAliveTimer = nil
         // Leave the dial in a sane state for other OSes / apps.
         stepsPerRevolution = 36
         detentHaptics = false
@@ -150,7 +130,6 @@ final class DialDevice {
         // synchronous round trip to the dial, so doing it here would hold up
         // the first input report (the press or turn that woke the dial).
         DispatchQueue.main.async { [weak self] in self?.pushHapticConfig() }
-        noteActivity()
     }
 
     private func detach(_ device: IOHIDDevice) {
@@ -162,10 +141,6 @@ final class DialDevice {
             onButton?(.released)
         }
         setConnected(!devices.isEmpty)
-        if devices.isEmpty {
-            keepAliveTimer?.invalidate()
-            keepAliveTimer = nil
-        }
     }
 
     private func setConnected(_ connected: Bool) {
@@ -191,7 +166,6 @@ final class DialDevice {
             awaitingFirstInput = false
             dialLog.notice("first input after attach")
         }
-        noteActivity()
         if button != lastButton {
             lastButton = button
             onButton?(button)
@@ -201,47 +175,10 @@ final class DialDevice {
         }
     }
 
-    // MARK: - Keep-alive
-
-    private func noteActivity() {
-        lastActivity = Date()
-        if keepAliveTimer == nil { scheduleKeepAlive() }
-    }
-
-    private func scheduleKeepAlive() {
-        keepAliveTimer?.invalidate()
-        keepAliveTimer = nil
-        guard !devices.isEmpty, stayConnectedAfterUse > 0 else { return }
-
-        let timer = Timer(timeInterval: DialDevice.keepAliveInterval, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            if Date().timeIntervalSince(self.lastActivity) >= self.stayConnectedAfterUse {
-                // Idle long enough: let the dial go to sleep.
-                self.keepAliveTimer?.invalidate()
-                self.keepAliveTimer = nil
-                return
-            }
-            self.keepAlivePulse()
-        }
-        // Lets macOS batch the wake-up with other work.
-        timer.tolerance = 10
-        RunLoop.main.add(timer, forMode: .common)
-        keepAliveTimer = timer
-    }
-
     // MARK: - Haptics
     // Protocol reference: https://github.com/daniel5151/surface-dial-linux/blob/main/src/dial_device/haptics.rs
 
-    /// The faintest haptic pulse we can make: shorten the waveform cutoff,
-    /// trigger once, then restore the normal settings.
-    private func keepAlivePulse() {
-        dialLog.notice("keep-alive pulse")
-        pushHapticConfig(cutoff: DialDevice.keepAliveCutoff)
-        buzz()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in self?.pushHapticConfig() }
-    }
-
-    private func pushHapticConfig(cutoff: UInt8 = 0) {
+    private func pushHapticConfig() {
         let steps = max(1, min(stepsPerRevolution, 3600))
         let report: [UInt8] = [
             0x01,                              // report ID
@@ -249,7 +186,7 @@ final class DialDevice {
             UInt8((steps >> 8) & 0xff),        // steps per revolution (hi)
             0x00,                              // repeat count
             detentHaptics ? 0x03 : 0x02,       // auto trigger on/off
-            cutoff,                            // waveform cutoff time
+            0x00,                              // waveform cutoff time
             0x00, 0x00,                        // retrigger period
         ]
         send(report, type: kIOHIDReportTypeFeature)
