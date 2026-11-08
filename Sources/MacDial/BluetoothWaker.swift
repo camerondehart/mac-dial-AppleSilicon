@@ -1,5 +1,6 @@
 import Foundation
 import CoreBluetooth
+import os
 
 /// Makes the dial reconnect quickly after it wakes from sleep.
 ///
@@ -98,10 +99,15 @@ final class BluetoothWaker: NSObject, CBCentralManagerDelegate {
         case .poweredOn:
             if peripheral == nil { findDial() } else { arm() }
         case .unauthorized, .unsupported:
-            NSLog("MacDial: Bluetooth unavailable for fast wake (state %d)", central.state.rawValue)
+            dialLog.error("Bluetooth unavailable for fast wake (state \(central.state.rawValue, privacy: .public))")
         default:
             break
         }
+    }
+
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        guard peripheral == self.peripheral else { return }
+        dialLog.notice("Bluetooth link up")
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
